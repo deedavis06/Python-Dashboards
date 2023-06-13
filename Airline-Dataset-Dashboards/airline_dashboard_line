@@ -1,0 +1,54 @@
+# Import required packages
+from dash import Dash, dcc, html, Input, Output
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import requests
+##Extract the monthly average arrival delay time and see how it changes from 2010-2020.
+
+#Read the airline data into pandas dataframe
+airline_data = pd.read_csv(r'C:\Users\JoeDe\Downloads\airline_data.csv',
+                            encoding = "ISO-8859-1", 
+                            dtype={'Div1Airport': str, 'Div1TailNum': str, 
+                                   'Div2Airport': str, 'Div2TailNum': str}) 
+#Create a dash application
+app = Dash(__name__)
+#Get the layout of the application and adjust it.
+#Create an outer division using html.Div and add title to the dashboard using html.H1 component
+#Add a html.Div and core input text component
+#Finally, add graph component.
+app.layout = html.Div(children=[html.H1('Airline Performance Dashboard', style={'textAlign': 'center', 'color': '#503D36', 'font-size': 40}), 
+                                html.Div(['Input Year:', dcc.Input(id='input-year', value='2010', 
+                                type='number', style={'height':'50px', 'font-size':35}),],  
+                                style={'font-size':40}),  
+                                html.Br(), 
+                                html.Br(),
+                                html.Div(dcc.Graph(id='line-plot', style={'textAlign': 'center'})),
+                                               
+                    ])
+#specify that a function should be called when an input component changes its value
+#The Input and Output functions are used to define the inputs and outputs of a callback function.
+#Add callback decorator
+@app.callback(Output(component_id='line-plot', component_property='figure'),
+               Input(component_id='input-year', component_property='value')) 
+
+# Add computation to callback function and return graph
+def get_graph(entered_year):
+    # Select data based on the entered year
+    df =  airline_data[airline_data['Year']==int(entered_year)]
+    
+    #Group the data by Month and compute the average over arrival delay time.
+    line_data = df.groupby('Month')['ArrDelay'].mean().reset_index()
+    
+    fig = go.Figure(data=go.Scatter(x=line_data['Month'], y=line_data['ArrDelay'], mode='lines', marker=dict(color='green')))
+    fig.update_layout(title={'text':'Month vs. Average Flight Delay Time', 'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor':'top'},
+                     xaxis_title='Month', yaxis_title='ArrDelay')
+    return fig
+
+# Run the application                   
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+#Resources
+##https://realpython.com/python-dash/
+##https://www.youtube.com/watch?v=r7Dtus7N4pI
